@@ -37,7 +37,7 @@ Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview
 
 ## Changes after release 1.0.0
 
-The main branch contains version 1.0.3. Release **1.0.0** remains the originally published build.
+The main branch contains version 1.0.3. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
 
 - Re-scan the page when dynamically inserted stylesheets change quiz colors.
 - Override high-specificity page rules affecting headers, footers, banners, and controls.
@@ -58,3 +58,5 @@ The first-frame regression fails against 1.0.1 with white loading panels and pas
 AP Classroom and Learnosity receive a black startup cover from a document-start stylesheet before saved preferences finish loading. Once preferences are available, a temporary cover uses the chosen background color. It stays through initial rendering or a large quiz loading panel, then clears after recoloring and two animation frames. The cover ignores pointer events and fails open after 1.5 seconds (2 seconds for the CSS startup fallback). The initial fallback is black even when saved settings later select a light palette or disable theming.
 
 Browser checks verify the cover exists before page scripts execute on an intercepted AP Classroom URL, clears after loading, and disappears when disabled. These are controlled browser tests, not a signed-in quiz test.
+
+Release policy: see [versioning.md](versioning.md). Every delivered version must include a published GitHub release and its matching installable ZIP.
