@@ -86,11 +86,13 @@ const os = require('node:os');
   await page.screenshot({path:path.resolve(__dirname,'../artifacts/old-book-preview.png')});
   await worker.evaluate(async () => {await chrome.storage.local.set({sites:{},global:{enabled:true,preset:'black',paper:true}});});
   await page.waitForFunction(() => getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)');
+  await page.waitForSelector('#cbp-loading-cover', {state:'detached'});
   await page.screenshot({path:path.resolve(__dirname,'../artifacts/black-preview.png')});
   await page.evaluate(() => {
     const host = document.createElement('div'); host.className='lrn-assess';host.id='loading-proof';
     host.innerHTML='<div class="items-loading" style="background:white;position:fixed;inset:150px 0 115px;z-index:500;display:grid;place-items:center"><span class="lrn_spinner">Loading…</span></div>';document.body.append(host);
   });
+  await page.waitForSelector('#cbp-loading-cover', {state:'detached'});
   await page.screenshot({path:path.resolve(__dirname,'../artifacts/loading-preview.png')});
   await page.locator('#loading-proof').evaluate(el=>el.remove());
   // Cover lifecycle: visible during a loading transition, removed after it finishes.
