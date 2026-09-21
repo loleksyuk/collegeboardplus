@@ -18,6 +18,11 @@
       ${priority} [${attribute}] { box-shadow: none !important; }
       ${priority} [data-cbp-gradient] { background-image: none !important; }
       input:not([type=radio]):not([type=checkbox]), textarea, select, [contenteditable=true] { background-color: ${p.surface} !important; caret-color: ${p.text} !important; }
+      ${priority} :is(.lrn-assess .items-loading, .lrn-loader, .lrn-customfeature-loader, .lrn-image-load-error-spinner-container) {
+        background-color: ${p.background} !important; color: ${p.text} !important;
+      }
+      ${priority} :is(.spinner-border, .lds-spinner-border) { border-color: ${p.text} !important; border-right-color: transparent !important; }
+      ${priority} .lrn_spinner > [class^="lrn_bounce"] { background-color: ${p.text} !important; }
       input, progress { accent-color: ${p.text} !important; }
       a { text-decoration-color: currentColor !important; }
       a:hover { text-decoration: underline !important; }
@@ -89,11 +94,16 @@
   function queue(root) {
     if (!(root instanceof Element) || root === style) return;
     pending.add(root);
-    if (!timer) timer = setTimeout(scan, 60);
+    // Mutation observers and this microtask run before paint. A timeout lets
+    // newly inserted white panels remain visible for several frames.
+    if (!timer) {
+      timer = true;
+      queueMicrotask(() => { if (timer) scan(); });
+    }
   }
   function stop() {
     observer?.disconnect(); observer = null;
-    clearTimeout(timer); timer = null; pending.clear();
+    timer = null; pending.clear();
     style?.remove(); style = null;
     const attrs = [attribute, 'data-cbp-gradient', 'data-cbp-before', 'data-cbp-after', 'data-cbp-fill', 'data-cbp-stroke'];
     document.querySelectorAll(attrs.map(a => `[${a}]`).join(',')).forEach(el => attrs.forEach(a => el.removeAttribute(a)));

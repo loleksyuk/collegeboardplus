@@ -7,7 +7,7 @@ const os = require('node:os');
 (async () => {
  const server = http.createServer((req,res) => {res.setHeader('Content-Type','text/html'); res.end(fs.readFileSync(path.join(__dirname,'fixture.html')));});
  await new Promise(r => server.listen(0,'127.0.0.1',r));
- const extension = path.resolve(__dirname,'../extension');
+ const extension = process.env.EXTENSION_PATH || path.resolve(__dirname,'../extension');
  const profile = fs.mkdtempSync(path.join(os.tmpdir(),'cbp-test-'));
  let context;
  try {
@@ -18,6 +18,17 @@ const os = require('node:os');
   const errors=[]; page.on('pageerror',e => errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForSelector('#cbp-page-colors', {state:'attached'});
+  async function loadingFrame(expected) {
+    const result = await page.evaluate(async () => {
+      const host = document.createElement('div'); host.className = 'lrn-assess';
+      host.innerHTML = '<div class="items-loading" style="background:white;position:fixed;inset:150px 0 115px;z-index:500;display:grid;place-items:center"><span class="lrn_spinner">Loading…</span></div><div class="temporary-panel" style="background:white">Loading content</div>';
+      await new Promise(resolve => requestAnimationFrame(() => { document.body.append(host); resolve(); }));
+      const first = await new Promise(resolve => requestAnimationFrame(() => resolve([...host.children].map(el => getComputedStyle(el).backgroundColor))));
+      host.remove();
+      return first;
+    });
+    assert.deepEqual(result, [expected, expected], 'Loading panels must have the selected color at the first paint');
+  }
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   assert.equal(await bg(), 'rgb(0, 0, 0)');
   // Regression: AP Classroom injects high-specificity styles after its shell mounts.
@@ -47,6 +58,7 @@ const os = require('node:os');
   for (const [preset, expected] of Object.entries({dark:'rgb(24, 24, 24)',gray:'rgb(64, 64, 64)',light:'rgb(188, 188, 188)',white:'rgb(230, 230, 230)',book:'rgb(216, 199, 163)',black:'rgb(0, 0, 0)'})) {
    await popup.click(`[data-preset=${preset}]`);
    await page.waitForFunction(value => getComputedStyle(document.body).backgroundColor === value, expected);
+   await loadingFrame(expected);
   }
   await page.evaluate(() => {const el=document.createElement('div');el.id='dynamic';el.className='panel';el.textContent='Dynamically loaded question';document.body.append(el);});
   await page.waitForFunction(() => document.querySelector('#dynamic').getAttribute('data-cbp-surface') === 'surface');
@@ -58,6 +70,7 @@ const os = require('node:os');
   await popup.uncheck('#enabled');
   await page.waitForFunction(() => !document.querySelector('#cbp-page-colors'));
   assert.equal(await bg(),'rgb(255, 255, 255)');
+  await loadingFrame('rgb(255, 255, 255)');
   assert.equal(await page.locator('[data-cbp-surface], [data-cbp-before], [data-cbp-fill], [data-cbp-stroke]').count(),0);
   assert.equal(await page.locator('header').evaluate(el => getComputedStyle(el).backgroundColor),'rgb(230, 237, 248)');
   assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).stroke),'rgb(0, 0, 0)');
@@ -74,8 +87,14 @@ const os = require('node:os');
   await worker.evaluate(async () => {await chrome.storage.local.set({sites:{},global:{enabled:true,preset:'black',paper:true}});});
   await page.waitForFunction(() => getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)');
   await page.screenshot({path:path.resolve(__dirname,'../artifacts/black-preview.png')});
+  await page.evaluate(() => {
+    const host = document.createElement('div'); host.className='lrn-assess';host.id='loading-proof';
+    host.innerHTML='<div class="items-loading" style="background:white;position:fixed;inset:150px 0 115px;z-index:500;display:grid;place-items:center"><span class="lrn_spinner">Loading…</span></div>';document.body.append(host);
+  });
+  await page.screenshot({path:path.resolve(__dirname,'../artifacts/loading-preview.png')});
+  await page.locator('#loading-proof').evaluate(el=>el.remove());
   await popup.reload(); await popup.locator('body').screenshot({path:path.resolve(__dirname,'../artifacts/popup-preview.png')});
   assert.deepEqual(errors,[]);
-  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration.');
+  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration; first-frame loading colors across all six presets and disabled mode.');
  } finally {await context?.close(); server.close();fs.rmSync(profile,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

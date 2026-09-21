@@ -37,7 +37,7 @@ Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview
 
 ## Changes after release 1.0.0
 
-The main branch contains version 1.0.1. Release **1.0.0** remains the originally published build.
+The main branch contains version 1.0.2. Release **1.0.0** remains the originally published build.
 
 - Re-scan the page when dynamically inserted stylesheets change quiz colors.
 - Override high-specificity page rules affecting headers, footers, banners, and controls.
@@ -46,3 +46,9 @@ The main branch contains version 1.0.1. Release **1.0.0** remains the originally
 - Restore all added color attributes when disabled.
 
 Regression checks reproduce late stylesheet insertion and high-specificity light header/footer/banner styling. Chromium checks and rendered synthetic-page review pass; verification in a live authenticated quiz is still pending.
+
+### 1.0.2 — Loading flash (issue #1)
+
+Removed the 60 ms recoloring delay for inserted content. Mutation processing now runs in a microtask before paint, and Learnosity loading panels have explicit palette rules. Spinner borders and loading dots retain contrast.
+
+The first-frame regression fails against 1.0.1 with white loading panels and passes against the fix across all six presets and with theming disabled. The complete Chromium regression suite also passes. `artifacts/loading-preview.png` shows the synthetic loading fixture; this is not a live authenticated AP Classroom test.

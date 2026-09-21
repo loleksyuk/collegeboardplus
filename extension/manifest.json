@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CollegeBoard+ Dark Mode",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Customizable grayscale page themes, with AP Classroom and Learnosity support.",
   "permissions": [
     "storage",
