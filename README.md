@@ -1,0 +1,36 @@
+# CollegeBoard+ Dark Mode
+
+A dependency-free Chrome Manifest V3 extension. Black-and-white controls with six page palettes: Pure black, Dark gray, Gray, Light gray, Dark white, and Old book (warm aged-paper beige).
+
+## Install
+
+1. Open `chrome://extensions` in Chrome.
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select the `extension` folder next to this file.
+4. Refresh existing website tabs, then pin the extension and open **Page colors**.
+
+The ZIP contains the same installable files. Extract it first and select the extracted folder containing `manifest.json`.
+
+## Use
+
+Choose a preset or change background, surface, text, and border colors. Settings save immediately. **This website** creates an override for the current hostname; **Default for all websites** changes the fallback for websites without overrides. **Use website defaults** deletes that site's override. Switching **On** off restores original page colors. The popup stays black regardless of the page palette.
+
+**Old book** uses warm beige backgrounds and dark brown text. It has no texture or animation. **White backing for quiz diagrams** keeps transparent Learnosity images readable without inverting their pixels. Custom color contrast is shown against both background colors.
+
+## Scope and privacy
+
+The extension requests local storage, active-tab access for identifying the current site, and content-script access to HTTP/HTTPS pages. It stores settings locally. It has no analytics, network requests, remote libraries, or quiz-answer features. The supplied HAR files were inspected for CSS patterns; account data, request headers, captured questions, and HAR files are not included in the extension or ZIP.
+
+The implementation follows [Chrome's content script model](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts). Page recoloring cannot change the Chrome toolbar, internal pages, Web Store, or built-in PDF viewer. Closed shadow roots and unusual inline `!important` rules can retain original styles. Images, videos, SVGs, and canvases keep their original artwork; full-color background images are preserved. Embedded HTTP/HTTPS frames inherit the top-level hostname when exposed by Chrome.
+
+## Verification
+
+`tests/browser.cjs` loads the actual extension into isolated Chromium and checks all six palettes, custom color persistence, dynamically inserted content, selected quiz choices, image preservation, disable restoration, site overrides, and embedded-frame inheritance. Test pages are synthetic, informed by AP Classroom/Learnosity CSS selectors in the supplied captures. A live authenticated College Board quiz has not been tested.
+
+Run with Node and Playwright available:
+
+```sh
+node tests/browser.cjs
+```
+
+Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview screenshots are in `artifacts/`.

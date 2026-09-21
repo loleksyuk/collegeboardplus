@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page colors</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+<header><div class="brand"><img class="logo" src="icons/logo.png" alt="" width="44" height="44"><div><h1>Page colors</h1><p>CollegeBoard+</p></div></div><label class="enable"><input id="enabled" type="checkbox"> On</label></header>
+<main>
+<label class="scope">Apply to <select id="scope"><option value="site">This website</option><option value="global">Default for all websites</option></select></label>
+<p id="site" class="muted"></p>
+<fieldset><legend>Theme</legend><div id="presets" class="presets"></div></fieldset>
+<fieldset id="custom"><legend>Customize</legend><div class="colors">
+<label>Background <input type="color" id="background"></label><label>Surfaces <input type="color" id="surface"></label><label>Text <input type="color" id="text"></label><label>Borders <input type="color" id="border"></label>
+</div><p id="contrast" class="muted"></p></fieldset>
+<div id="preview"><small>PREVIEW</small><p>A clearer place to focus.</p><span>Answer choice</span></div>
+<label class="paper"><input type="checkbox" id="paper"> White backing for quiz diagrams</label>
+<footer><button id="reset">Use default settings</button><span id="status" role="status" aria-live="polite"></span></footer>
+<p class="note">Changes save automatically. Chrome’s internal pages and the Web Store cannot be themed.</p>
+</main><script src="shared.js"></script><script src="popup.js"></script>
+</body></html>
