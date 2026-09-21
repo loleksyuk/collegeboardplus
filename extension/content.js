@@ -4,27 +4,32 @@
   // In embedded quizzes, use the outer site's preference whenever Chrome exposes it.
   try { site = new URL(location.ancestorOrigins?.[location.ancestorOrigins.length - 1] || location.href).hostname; } catch {}
   const pending = new Set();
+  const priority = ':root:not(#cbp-unused-1):not(#cbp-unused-2):not(#cbp-unused-3)';
   const excluded = 'img, video, canvas, svg, svg *, picture, iframe, object, embed';
   function stylesheet(s) {
     const p = s.palette;
     const dark = PageColors.luminance(p.background) < .3;
     return `
-      :root { color-scheme: ${dark ? 'dark' : 'light'} !important; background-color: ${p.background} !important; }
-      html body { background-color: ${p.background} !important; }
-      *:not(:where(${excluded})) { color: ${p.text} !important; border-color: ${p.border} !important; text-shadow: none !important; }
-      [${attribute}="base"] { background-color: ${p.background} !important; }
-      [${attribute}="surface"] { background-color: ${p.surface} !important; }
-      [${attribute}] { box-shadow: none !important; }
-      [data-cbp-gradient] { background-image: none !important; }
+      ${priority} { color-scheme: ${dark ? 'dark' : 'light'} !important; background-color: ${p.background} !important; }
+      ${priority} body:not(#cbp-unused-4) { background-color: ${p.background} !important; }
+      ${priority} *:not(:where(${excluded})) { color: ${p.text} !important; border-color: ${p.border} !important; text-shadow: none !important; }
+      ${priority} [${attribute}="base"] { background-color: ${p.background} !important; }
+      ${priority} [${attribute}="surface"] { background-color: ${p.surface} !important; }
+      ${priority} [${attribute}] { box-shadow: none !important; }
+      ${priority} [data-cbp-gradient] { background-image: none !important; }
       input:not([type=radio]):not([type=checkbox]), textarea, select, [contenteditable=true] { background-color: ${p.surface} !important; caret-color: ${p.text} !important; }
       input, progress { accent-color: ${p.text} !important; }
       a { text-decoration-color: currentColor !important; }
       a:hover { text-decoration: underline !important; }
       button:hover, [role=button]:hover, .lrn-mcq-option:hover { outline: 1px solid ${p.border} !important; outline-offset: -1px; }
       :focus-visible { outline: 2px solid ${p.text} !important; outline-offset: 2px !important; }
-      [aria-selected=true], [aria-checked=true], .lrn-mcq-option.lrn_selected, .lrn-mcq-option:has(input:checked) { background-color: ${p.surface} !important; outline: 2px solid ${p.text} !important; outline-offset: -2px !important; }
-      .lrn-mcq-option.lrn_correct, .lrn-mcq-option.lrn_valid { outline: 2px solid ${dark ? '#74d99a' : '#176635'} !important; }
-      .lrn-mcq-option.lrn_incorrect, .lrn-mcq-option.lrn_invalid { outline: 2px solid ${dark ? '#ff9999' : '#9e2525'} !important; }
+      ${priority} :is([aria-selected=true], [aria-checked=true], .lrn-mcq-option.lrn_selected, .lrn-mcq-option:has(input:checked)) { background-color: ${p.surface} !important; outline: 2px solid ${p.text} !important; outline-offset: -2px !important; }
+      ${priority} :is(.lrn-mcq-option.lrn_correct, .lrn-mcq-option.lrn_valid):not(#cbp-unused-4) { outline: 2px solid ${dark ? '#74d99a' : '#176635'} !important; }
+      ${priority} :is(.lrn-mcq-option.lrn_incorrect, .lrn-mcq-option.lrn_invalid):not(#cbp-unused-4) { outline: 2px solid ${dark ? '#ff9999' : '#9e2525'} !important; }
+      ${priority} *:not(:where(${excluded}))::before, ${priority} *:not(:where(${excluded}))::after { color: ${p.text} !important; border-color: ${p.border} !important; }
+      ${priority} [data-cbp-before]::before, ${priority} [data-cbp-after]::after { background-color: ${p.surface} !important; }
+      ${priority} [data-cbp-fill] { fill: ${p.text} !important; }
+      ${priority} [data-cbp-stroke] { stroke: ${p.text} !important; }
       ::placeholder { color: ${p.text} !important; opacity: .6 !important; }
       ::selection { background: ${p.text} !important; color: ${p.background} !important; }
       :disabled, [aria-disabled=true] { opacity: .55 !important; }
@@ -45,7 +50,24 @@
     pending.clear();
     const updates = [];
     for (const el of elements) {
+      if (el instanceof SVGElement) {
+        if (el.closest('button, [role="button"], header, footer, [class*="bluebook-player-header"], [class*="bluebook-player-footer"]')) {
+          const icon = getComputedStyle(el);
+          for (const prop of ['fill', 'stroke']) {
+            const rgb = icon[prop].match(/[\d.]+/g)?.map(Number) || [];
+            const neutral = rgb.length >= 3 && Math.max(...rgb.slice(0, 3)) - Math.min(...rgb.slice(0, 3)) < 15 && (rgb.length < 4 || rgb[3] > 0);
+            el.toggleAttribute(`data-cbp-${prop}`, neutral);
+          }
+        }
+        continue;
+      }
       if (!(el instanceof HTMLElement) || el === style || el.matches(excluded)) continue;
+      for (const pseudo of ['before', 'after']) {
+        const decoration = getComputedStyle(el, `::${pseudo}`);
+        const rgba = decoration.backgroundColor.match(/[\d.]+/g)?.map(Number) || [];
+        const painted = !['none', 'normal'].includes(decoration.content) && rgba.length >= 3 && (rgba.length < 4 || rgba[3] > .05);
+        el.toggleAttribute(`data-cbp-${pseudo}`, painted);
+      }
       const css = getComputedStyle(el);
       const values = css.backgroundColor.match(/[\d.]+/g)?.map(Number) || [];
       const opaque = values.length >= 3 && (values.length < 4 || values[3] > .05);
@@ -73,7 +95,8 @@
     observer?.disconnect(); observer = null;
     clearTimeout(timer); timer = null; pending.clear();
     style?.remove(); style = null;
-    document.querySelectorAll(`[${attribute}], [data-cbp-gradient]`).forEach(el => { el.removeAttribute(attribute); el.removeAttribute('data-cbp-gradient'); });
+    const attrs = [attribute, 'data-cbp-gradient', 'data-cbp-before', 'data-cbp-after', 'data-cbp-fill', 'data-cbp-stroke'];
+    document.querySelectorAll(attrs.map(a => `[${a}]`).join(',')).forEach(el => attrs.forEach(a => el.removeAttribute(a)));
   }
   function apply() {
     settings = PageColors.resolve(storage.sites?.[site] || storage.global);
@@ -88,7 +111,10 @@
       for (const r of records) {
         if (r.type === 'attributes') queue(r.target);
         else {
-          r.addedNodes.forEach(queue);
+          r.addedNodes.forEach(node => {
+            queue(node);
+            if (node instanceof Element && (node.matches('style, link[rel="stylesheet"]') || node.querySelector('style, link[rel="stylesheet"]'))) queue(document.documentElement);
+          });
           if (r.target instanceof HTMLStyleElement && r.target !== style) queue(document.documentElement);
         }
       }

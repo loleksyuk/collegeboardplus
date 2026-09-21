@@ -21,7 +21,7 @@ Choose a preset or change background, surface, text, and border colors. Settings
 
 The extension requests local storage, active-tab access for identifying the current site, and content-script access to HTTP/HTTPS pages. It stores settings locally. It has no analytics, network requests, remote libraries, or quiz-answer features. The supplied HAR files were inspected for CSS patterns; account data, request headers, captured questions, and HAR files are not included in the extension or ZIP.
 
-The implementation follows [Chrome's content script model](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts). Page recoloring cannot change the Chrome toolbar, internal pages, Web Store, or built-in PDF viewer. Closed shadow roots and unusual inline `!important` rules can retain original styles. Images, videos, SVGs, and canvases keep their original artwork; full-color background images are preserved. Embedded HTTP/HTTPS frames inherit the top-level hostname when exposed by Chrome.
+The implementation follows [Chrome's content script model](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts). Page recoloring cannot change the Chrome toolbar, internal pages, Web Store, or built-in PDF viewer. Closed shadow roots and unusual inline `!important` rules can retain original styles. Images, videos, diagram SVGs, and canvases keep their original artwork; neutral SVG icons in controls follow the text color; full-color background images are preserved. Embedded HTTP/HTTPS frames inherit the top-level hostname when exposed by Chrome.
 
 ## Verification
 
@@ -34,3 +34,15 @@ node tests/browser.cjs
 ```
 
 Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview screenshots are in `artifacts/`.
+
+## Changes after release 1.0.0
+
+The main branch contains version 1.0.1. Release **1.0.0** remains the originally published build.
+
+- Re-scan the page when dynamically inserted stylesheets change quiz colors.
+- Override high-specificity page rules affecting headers, footers, banners, and controls.
+- Theme generated control decorations and neutral toolbar SVG icons, while preserving quiz diagrams.
+- Keep the chosen body background and correct/incorrect outlines intact.
+- Restore all added color attributes when disabled.
+
+Regression checks reproduce late stylesheet insertion and high-specificity light header/footer/banner styling. Chromium checks and rendered synthetic-page review pass; verification in a live authenticated quiz is still pending.

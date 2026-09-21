@@ -20,6 +20,26 @@ const os = require('node:os');
   await page.waitForSelector('#cbp-page-colors', {state:'attached'});
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   assert.equal(await bg(), 'rgb(0, 0, 0)');
+  // Regression: AP Classroom injects high-specificity styles after its shell mounts.
+  await page.evaluate(() => {
+    document.body.id = 'quiz-shell';
+    const css = document.createElement('style');
+    css.textContent = `
+      #quiz-shell header.bluebook-player-header, #quiz-shell footer.bluebook-player-footer {background:#e6edf8 !important;color:#222 !important;padding:18px;display:flex;justify-content:space-between;align-items:center}
+      #quiz-shell .calculator-banner {background:#f5c5ce !important;color:#ddd !important;text-align:center}
+      #quiz-shell .lrn-mcq-option::before {content:'•';background:white !important;color:black !important}
+      #quiz-shell footer button {background:#324dc7 !important;color:white !important}
+    `;
+    document.head.append(css);
+  });
+  await page.waitForFunction(() => ['header', 'footer', '.calculator-banner', 'footer button'].every(selector => getComputedStyle(document.querySelector(selector)).backgroundColor === 'rgb(20, 20, 20)'));
+  for (const selector of ['header', 'footer', '.calculator-banner', 'footer button']) {
+    assert.equal(await page.locator(selector).first().evaluate(el => getComputedStyle(el).backgroundColor),'rgb(20, 20, 20)');
+    assert.equal(await page.locator(selector).first().evaluate(el => getComputedStyle(el).color),'rgb(238, 238, 238)');
+  }
+  assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).stroke),'rgb(238, 238, 238)');
+  assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).fill),'none');
+  assert.equal(await page.locator('.lrn-mcq-option').first().evaluate(el => getComputedStyle(el,'::before').backgroundColor),'rgb(20, 20, 20)');
   const popup = await context.newPage(); await popup.goto(`chrome-extension://${id}/popup.html`);
   await popup.waitForSelector('[data-preset=book]');
   // The test's active tab is an extension page, so edit all-site defaults.
@@ -38,7 +58,9 @@ const os = require('node:os');
   await popup.uncheck('#enabled');
   await page.waitForFunction(() => !document.querySelector('#cbp-page-colors'));
   assert.equal(await bg(),'rgb(255, 255, 255)');
-  assert.equal(await page.locator('[data-cbp-surface]').count(),0);
+  assert.equal(await page.locator('[data-cbp-surface], [data-cbp-before], [data-cbp-fill], [data-cbp-stroke]').count(),0);
+  assert.equal(await page.locator('header').evaluate(el => getComputedStyle(el).backgroundColor),'rgb(230, 237, 248)');
+  assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).stroke),'rgb(0, 0, 0)');
   // Site overrides and inheritance across an iframe.
   await worker.evaluate(async () => {await chrome.storage.local.set({sites:{'127.0.0.1':{enabled:true,preset:'book',paper:true}}});});
   await page.waitForFunction(() => getComputedStyle(document.body).backgroundColor === 'rgb(216, 199, 163)');
@@ -54,6 +76,6 @@ const os = require('node:os');
   await page.screenshot({path:path.resolve(__dirname,'../artifacts/black-preview.png')});
   await popup.reload(); await popup.locator('body').screenshot({path:path.resolve(__dirname,'../artifacts/popup-preview.png')});
   assert.deepEqual(errors,[]);
-  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance.');
+  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration.');
  } finally {await context?.close(); server.close();fs.rmSync(profile,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
