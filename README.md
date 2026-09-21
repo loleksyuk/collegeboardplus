@@ -37,7 +37,7 @@ Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview
 
 ## Changes after release 1.0.0
 
-The main branch contains version 1.0.2. Release **1.0.0** remains the originally published build.
+The main branch contains version 1.0.3. Release **1.0.0** remains the originally published build.
 
 - Re-scan the page when dynamically inserted stylesheets change quiz colors.
 - Override high-specificity page rules affecting headers, footers, banners, and controls.
@@ -52,3 +52,9 @@ Regression checks reproduce late stylesheet insertion and high-specificity light
 Removed the 60 ms recoloring delay for inserted content. Mutation processing now runs in a microtask before paint, and Learnosity loading panels have explicit palette rules. Spinner borders and loading dots retain contrast.
 
 The first-frame regression fails against 1.0.1 with white loading panels and passes against the fix across all six presets and with theming disabled. The complete Chromium regression suite also passes. `artifacts/loading-preview.png` shows the synthetic loading fixture; this is not a live authenticated AP Classroom test.
+
+### 1.0.3 — Temporary loading cover
+
+AP Classroom and Learnosity receive a black startup cover from a document-start stylesheet before saved preferences finish loading. Once preferences are available, a temporary cover uses the chosen background color. It stays through initial rendering or a large quiz loading panel, then clears after recoloring and two animation frames. The cover ignores pointer events and fails open after 1.5 seconds (2 seconds for the CSS startup fallback). The initial fallback is black even when saved settings later select a light palette or disable theming.
+
+Browser checks verify the cover exists before page scripts execute on an intercepted AP Classroom URL, clears after loading, and disappears when disabled. These are controlled browser tests, not a signed-in quiz test.

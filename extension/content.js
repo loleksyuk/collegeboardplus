@@ -1,4 +1,27 @@
 (() => {
+  let cover, coverTimeout, uncoverFrame, loading = false;
+  function reveal() {
+    cancelAnimationFrame(uncoverFrame);
+    clearTimeout(coverTimeout);
+    cover?.remove(); cover = null;
+    document.documentElement.setAttribute('data-cbp-ready', '');
+  }
+  function protect() {
+    if (cover || !settings?.enabled) return;
+    cover = document.createElement('div');
+    cover.id = 'cbp-loading-cover';
+    cover.setAttribute('aria-hidden', 'true');
+    cover.style.cssText = `position:fixed!important;inset:0!important;z-index:2147483647!important;background:${settings.palette.background}!important;pointer-events:none!important;`;
+    document.documentElement.append(cover);
+    // Never strand the user behind a cover if the page fails to finish loading.
+    coverTimeout = setTimeout(reveal, 1500);
+  }
+  function revealAfterPaint() {
+    cancelAnimationFrame(uncoverFrame);
+    uncoverFrame = requestAnimationFrame(() => {
+      uncoverFrame = requestAnimationFrame(reveal);
+    });
+  }
   const attribute = 'data-cbp-surface';
   let style, observer, timer, settings, storage = {}, site = location.hostname;
   // In embedded quizzes, use the outer site's preference whenever Chrome exposes it.
@@ -66,7 +89,7 @@
         }
         continue;
       }
-      if (!(el instanceof HTMLElement) || el === style || el.matches(excluded)) continue;
+      if (!(el instanceof HTMLElement) || el === style || el === cover || el.matches(excluded)) continue;
       for (const pseudo of ['before', 'after']) {
         const decoration = getComputedStyle(el, `::${pseudo}`);
         const rgba = decoration.backgroundColor.match(/[\d.]+/g)?.map(Number) || [];
@@ -90,9 +113,16 @@
       else el.removeAttribute(attribute);
     }
     style.disabled = false;
+    const loadingNow = [...document.querySelectorAll('.items-loading, .lrn-loader, .lrn-customfeature-loader')].some(el => {
+      const css = getComputedStyle(el), rect = el.getBoundingClientRect();
+      return css.visibility !== 'hidden' && css.display !== 'none' && Number(css.opacity) > 0 && rect.width * rect.height > innerWidth * innerHeight / 4;
+    });
+    if (loadingNow && !loading) { protect(); cancelAnimationFrame(uncoverFrame); }
+    loading = loadingNow;
+    if (!loading && document.readyState !== 'loading') revealAfterPaint();
   }
   function queue(root) {
-    if (!(root instanceof Element) || root === style) return;
+    if (!(root instanceof Element) || root === style || root === cover) return;
     pending.add(root);
     // Mutation observers and this microtask run before paint. A timeout lets
     // newly inserted white panels remain visible for several frames.
@@ -103,6 +133,7 @@
   }
   function stop() {
     observer?.disconnect(); observer = null;
+    reveal(); loading = false;
     timer = null; pending.clear();
     style?.remove(); style = null;
     const attrs = [attribute, 'data-cbp-gradient', 'data-cbp-before', 'data-cbp-after', 'data-cbp-fill', 'data-cbp-stroke'];
@@ -112,6 +143,7 @@
     settings = PageColors.resolve(storage.sites?.[site] || storage.global);
     stop();
     if (!settings.enabled) return;
+    protect();
     style = document.createElement('style');
     style.id = 'cbp-page-colors';
     style.textContent = stylesheet(settings);
@@ -121,6 +153,7 @@
       for (const r of records) {
         if (r.type === 'attributes') queue(r.target);
         else {
+          if ([...r.removedNodes].some(node => !(node instanceof Element) || !node.id?.startsWith('cbp-'))) queue(r.target);
           r.addedNodes.forEach(node => {
             queue(node);
             if (node instanceof Element && (node.matches('style, link[rel="stylesheet"]') || node.querySelector('style, link[rel="stylesheet"]'))) queue(document.documentElement);
@@ -132,13 +165,14 @@
     observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'checked', 'aria-checked', 'aria-selected'] });
   }
   async function start() {
-    storage = await chrome.storage.local.get(['global', 'sites']);
+    try { storage = await chrome.storage.local.get(['global', 'sites']); } catch { reveal(); return; }
     apply();
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
       for (const key of ['global', 'sites']) if (changes[key]) storage[key] = changes[key].newValue;
       apply();
     });
+    document.addEventListener('DOMContentLoaded', () => { if (style) queue(document.documentElement); }, { once: true });
     document.addEventListener('load', event => { if (event.target instanceof HTMLLinkElement && style) queue(document.documentElement); }, true);
   }
   if (document.documentElement) start();

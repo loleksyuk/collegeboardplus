@@ -1,0 +1,12 @@
+/* Installed at document_start, before JavaScript waits for saved preferences.
+   Fail open after 2s if the content script cannot initialize. */
+:root:not([data-cbp-ready])::before {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483647 !important;
+  background: #000 !important;
+  pointer-events: none !important;
+  animation: cbp-startup-release 0s 2s forwards !important;
+}
+@keyframes cbp-startup-release { to { visibility: hidden; } }

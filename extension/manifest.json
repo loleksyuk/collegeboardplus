@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CollegeBoard+ Dark Mode",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Customizable grayscale page themes, with AP Classroom and Learnosity support.",
   "permissions": [
     "storage",
@@ -16,6 +16,18 @@
     }
   },
   "content_scripts": [
+    {
+      "matches": [
+        "https://*.collegeboard.org/*",
+        "https://*.learnosity.com/*"
+      ],
+      "css": [
+        "startup.css"
+      ],
+      "all_frames": true,
+      "match_origin_as_fallback": true,
+      "run_at": "document_start"
+    },
     {
       "matches": [
         "http://*/*",

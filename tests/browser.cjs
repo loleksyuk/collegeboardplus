@@ -93,8 +93,37 @@ const os = require('node:os');
   });
   await page.screenshot({path:path.resolve(__dirname,'../artifacts/loading-preview.png')});
   await page.locator('#loading-proof').evaluate(el=>el.remove());
+  // Cover lifecycle: visible during a loading transition, removed after it finishes.
+  await page.waitForSelector('#cbp-loading-cover', {state:'detached'});
+  await page.evaluate(() => {
+    const host=document.createElement('div'); host.id='cover-test';
+    host.innerHTML='<div class="items-loading" style="position:fixed;inset:0;background:white">Loading</div>';
+    document.body.append(host);
+  });
+  await page.waitForSelector('#cbp-loading-cover', {state:'attached'});
+  assert.equal(await page.locator('#cbp-loading-cover').evaluate(el=>getComputedStyle(el).backgroundColor), 'rgb(0, 0, 0)');
+  assert.equal(await page.locator('#cbp-loading-cover').evaluate(el=>getComputedStyle(el).pointerEvents), 'none');
+  await page.locator('#cover-test').evaluate(el=>el.remove());
+  await page.waitForSelector('#cbp-loading-cover', {state:'detached'});
+  // Exercise the real document_start CSS on an intercepted AP Classroom origin.
+  const startup=await context.newPage();
+  await startup.route('https://apclassroom.collegeboard.org/**', route=>route.fulfill({contentType:'text/html',body:`<!doctype html><html><head><script>
+    const root=document.documentElement;
+    window.earlyCover=getComputedStyle(root,'::before').backgroundColor === 'rgb(0, 0, 0)' && getComputedStyle(root,'::before').content !== 'none' || !!document.getElementById('cbp-loading-cover');
+  </script></head><body style="background:white">Startup test</body></html>`}));
+  await startup.goto('https://apclassroom.collegeboard.org/cbp-startup-test');
+  assert.equal(await startup.evaluate(()=>window.earlyCover),true,'A cover exists before page scripts run');
+  await startup.waitForSelector('#cbp-loading-cover', {state:'detached'});
+  assert.equal(await startup.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(0, 0, 0)');
+  await worker.evaluate(()=>chrome.storage.local.set({global:{enabled:false,preset:'black'}}));
+  await startup.waitForFunction(()=>!document.querySelector('#cbp-page-colors'));
+  assert.equal(await startup.locator('#cbp-loading-cover').count(),0);
+  assert.equal(await startup.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');
+  assert.equal(await startup.evaluate(()=>getComputedStyle(document.documentElement,'::before').content),'none');
+  await startup.close();
+  await worker.evaluate(()=>chrome.storage.local.set({global:{enabled:true,preset:'black'}}));
   await popup.reload(); await popup.locator('body').screenshot({path:path.resolve(__dirname,'../artifacts/popup-preview.png')});
   assert.deepEqual(errors,[]);
-  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration; first-frame loading colors across all six presets and disabled mode.');
+  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration; first-frame loading colors across all six presets and disabled mode; document-start cover; transition cover removal; disabled cover cleanup.');
  } finally {await context?.close(); server.close();fs.rmSync(profile,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
