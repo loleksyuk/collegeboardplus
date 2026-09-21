@@ -1,4 +1,4 @@
-# CollegeBoard+ Dark Mode
+# CollegeBoard+
 
 A dependency-free Chrome Manifest V3 extension. Black-and-white controls with six page palettes: Pure black, Dark gray, Gray, Light gray, Dark white, and Old book (warm aged-paper beige).
 
@@ -7,7 +7,7 @@ A dependency-free Chrome Manifest V3 extension. Black-and-white controls with si
 1. Open `chrome://extensions` in Chrome.
 2. Enable **Developer mode**.
 3. Click **Load unpacked** and select the `extension` folder next to this file.
-4. Refresh existing website tabs, then pin the extension and open **Page colors**.
+4. Refresh existing website tabs, then pin the extension and open **CollegeBoard+**.
 
 The ZIP contains the same installable files. Extract it first and select the extracted folder containing `manifest.json`.
 
@@ -37,7 +37,7 @@ Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview
 
 ## Changes after release 1.0.0
 
-The main branch contains version 1.0.4. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
+The main branch contains version 1.0.5. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
 
 - Re-scan the page when dynamically inserted stylesheets change quiz colors.
 - Override high-specificity page rules affecting headers, footers, banners, and controls.
@@ -64,3 +64,7 @@ Release policy: see [versioning.md](versioning.md). Every delivered version must
 ### 1.0.4 — Updated logo
 
 Replaced the popup logo and all toolbar/extension icon sizes with the updated supplied artwork. The full-size source image is preserved exactly. Theme and loading-cover behavior are unchanged.
+
+### 1.0.5 — CollegeBoard+ branding
+
+Renamed the extension, toolbar title, and popup to CollegeBoard+. Page colors remains the current feature. New release assets use `CollegeBoardPlus-vVERSION.zip`; previously published asset names remain unchanged.

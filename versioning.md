@@ -9,7 +9,7 @@ Every new extension version must be committed and pushed to GitHub, tagged, and 
 - Use semantic versions: `MAJOR.MINOR.PATCH`. Increment PATCH for fixes, MINOR for new compatible features, and MAJOR for incompatible changes.
 - Set `extension/manifest.json` → `version` to the exact version being released.
 - Use the exact version for both the Git tag and release title, for example `1.0.3` (no `v` prefix).
-- Name the asset `CollegeBoardPlus-Dark-Mode-v1.0.3.zip`.
+- Name the asset `CollegeBoardPlus-v1.0.5.zip` (substitute the release version). The product name is exactly `CollegeBoard+`; keep individual feature names such as Page colors separate from product branding. Preserve older published asset names.
 - Put `manifest.json` at the ZIP root along with all extension files. Exclude HAR captures, screenshots, tests, account data, and development files.
 
 ## Release checklist
