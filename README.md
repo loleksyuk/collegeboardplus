@@ -37,7 +37,7 @@ Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview
 
 ## Changes after release 1.0.0
 
-The main branch contains version 1.0.3. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
+The main branch contains version 1.0.4. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
 
 - Re-scan the page when dynamically inserted stylesheets change quiz colors.
 - Override high-specificity page rules affecting headers, footers, banners, and controls.
@@ -60,3 +60,7 @@ AP Classroom and Learnosity receive a black startup cover from a document-start 
 Browser checks verify the cover exists before page scripts execute on an intercepted AP Classroom URL, clears after loading, and disappears when disabled. These are controlled browser tests, not a signed-in quiz test.
 
 Release policy: see [versioning.md](versioning.md). Every delivered version must include a published GitHub release and its matching installable ZIP.
+
+### 1.0.4 — Updated logo
+
+Replaced the popup logo and all toolbar/extension icon sizes with the updated supplied artwork. The full-size source image is preserved exactly. Theme and loading-cover behavior are unchanged.
