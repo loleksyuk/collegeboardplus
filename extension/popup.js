@@ -5,8 +5,8 @@
   try { if (/^https?:/.test(tab?.url)) host = new URL(tab.url).hostname; } catch {}
   let data = await chrome.storage.local.get(['global', 'sites']);
   let current;
-  if (!host) { $('scope').value = 'global'; $('scope').options[0].disabled = true; }
-  $('site').textContent = host || 'Choose a regular website tab to apply colors there.';
+  if (!PageColors.isCollegeBoard(host)) { host = '';  $('scope').value = 'global'; $('scope').options[0].disabled = true; }
+  $('site').textContent = host || 'Inactive here. Open a College Board website to use CollegeBoard+.';
   for (const [id, p] of Object.entries(PageColors.presets)) {
     const button = document.createElement('button');
     button.type = 'button'; button.dataset.preset = id;
@@ -28,7 +28,7 @@
       $('preview').style.cssText = `background:${p.background};color:${p.text};border-color:${p.border}`;
       $('preview').querySelector('span').style.cssText = `background:${p.surface};border-color:${p.border}`;
     }
-    $('reset').textContent = $('scope').value === 'site' ? 'Use website defaults' : 'Reset all-site default';
+    $('reset').textContent = $('scope').value === 'site' ? 'Use website defaults' : 'Reset supported-site default';
   }
   function load() { current = { ...PageColors.defaults, ...($('scope').value === 'site' ? data.sites?.[host] || data.global : data.global) }; render(); }
   let saving = Promise.resolve();

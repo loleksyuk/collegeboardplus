@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CollegeBoard+",
-  "version": "1.0.5",
-  "description": "Customizable grayscale page themes, with AP Classroom and Learnosity support.",
+  "version": "1.0.6",
+  "description": "Page themes and reading customization for College Board websites and their embedded quizzes.",
   "permissions": [
     "storage",
     "activeTab"
@@ -18,8 +18,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.collegeboard.org/*",
-        "https://*.learnosity.com/*"
+        "https://*.collegeboard.org/*"
       ],
       "css": [
         "startup.css"
@@ -30,8 +29,8 @@
     },
     {
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "https://*.collegeboard.org/*",
+        "https://*.learnosity.com/*"
       ],
       "js": [
         "shared.js",

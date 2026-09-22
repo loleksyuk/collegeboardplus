@@ -16,7 +16,9 @@ const os = require('node:os');
   const id = new URL(worker.url()).host;
   const page = await context.newPage();
   const errors=[]; page.on('pageerror',e => errors.push(e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await context.route('https://apclassroom.collegeboard.org/**', route => route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'fixture.html'),'utf8')}));
+  await context.route('https://assess-va.learnosity.com/**', route => route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'fixture.html'),'utf8')}));
+  await page.goto('https://apclassroom.collegeboard.org/fixture');
   await page.waitForSelector('#cbp-page-colors', {state:'attached'});
   async function loadingFrame(expected) {
     const result = await page.evaluate(async () => {
@@ -51,6 +53,17 @@ const os = require('node:os');
   assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).stroke),'rgb(238, 238, 238)');
   assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).fill),'none');
   assert.equal(await page.locator('.lrn-mcq-option').first().evaluate(el => getComputedStyle(el,'::before').backgroundColor),'rgb(20, 20, 20)');
+  // Unrelated domains and standalone Learnosity pages must stay untouched.
+  const unrelated = await context.newPage();
+  for (const url of ['https://example.com/', 'https://collegeboard.org.example.com/', 'https://assess-va.learnosity.com/standalone']) {
+    await unrelated.route(url, route=>route.fulfill({contentType:'text/html',body:'<html><body style="background:white">Unrelated website</body></html>'}));
+    await unrelated.goto(url);
+    await unrelated.waitForTimeout(150);
+    assert.equal(await unrelated.locator('#cbp-page-colors, #cbp-loading-cover').count(),0);
+    assert.equal(await unrelated.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');
+    assert.equal(await unrelated.evaluate(()=>getComputedStyle(document.documentElement,'::before').content),'none');
+  }
+  await unrelated.close();
   const popup = await context.newPage(); await popup.goto(`chrome-extension://${id}/popup.html`);
   await popup.waitForSelector('[data-preset=book]');
   // The test's active tab is an extension page, so edit all-site defaults.
@@ -75,9 +88,9 @@ const os = require('node:os');
   assert.equal(await page.locator('header').evaluate(el => getComputedStyle(el).backgroundColor),'rgb(230, 237, 248)');
   assert.equal(await page.locator('header svg path').evaluate(el => getComputedStyle(el).stroke),'rgb(0, 0, 0)');
   // Site overrides and inheritance across an iframe.
-  await worker.evaluate(async () => {await chrome.storage.local.set({sites:{'127.0.0.1':{enabled:true,preset:'book',paper:true}}});});
+  await worker.evaluate(async () => {await chrome.storage.local.set({sites:{'apclassroom.collegeboard.org':{enabled:true,preset:'book',paper:true}}});});
   await page.waitForFunction(() => getComputedStyle(document.body).backgroundColor === 'rgb(216, 199, 163)');
-  await page.evaluate(() => {const f=document.createElement('iframe');f.src='/frame';f.id='embedded';document.body.append(f);});
+  await page.evaluate(() => {const f=document.createElement('iframe');f.src='https://assess-va.learnosity.com/frame';f.id='embedded';document.body.append(f);});
   const frame = page.frameLocator('#embedded');
   await frame.locator('#cbp-page-colors').waitFor({state:'attached'});
   assert.equal(await frame.locator('body').evaluate(el => getComputedStyle(el).backgroundColor),'rgb(216, 199, 163)');
@@ -126,6 +139,6 @@ const os = require('node:os');
   await worker.evaluate(()=>chrome.storage.local.set({global:{enabled:true,preset:'black'}}));
   await popup.reload(); await popup.locator('body').screenshot({path:path.resolve(__dirname,'../artifacts/popup-preview.png')});
   assert.deepEqual(errors,[]);
-  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration; first-frame loading colors across all six presets and disabled mode; document-start cover; transition cover removal; disabled cover cleanup.');
+  console.log('PASS: real Chromium extension load; six presets; popup persistence; custom colors; dynamic content; selection; untouched images; full disable restoration; site override; iframe inheritance; late stylesheet injection; high-specificity header/footer/banner colors; pseudo-elements; neutral toolbar SVG contrast and restoration; first-frame loading colors across all six presets and disabled mode; document-start cover; transition cover removal; disabled cover cleanup; unrelated domains and standalone Learnosity unchanged; College Board embedded Learnosity supported.');
  } finally {await context?.close(); server.close();fs.rmSync(profile,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

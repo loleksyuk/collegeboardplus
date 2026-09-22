@@ -26,6 +26,9 @@
   let style, observer, timer, settings, storage = {}, site = location.hostname;
   // In embedded quizzes, use the outer site's preference whenever Chrome exposes it.
   try { site = new URL(location.ancestorOrigins?.[location.ancestorOrigins.length - 1] || location.href).hostname; } catch {}
+  // Learnosity is shared by many services. Only theme its frames when the
+  // outermost page belongs to College Board, never unrelated customers.
+  if (!PageColors.isCollegeBoard(site)) return;
   const pending = new Set();
   const priority = ':root:not(#cbp-unused-1):not(#cbp-unused-2):not(#cbp-unused-3)';
   const excluded = 'img, video, canvas, svg, svg *, picture, iframe, object, embed';

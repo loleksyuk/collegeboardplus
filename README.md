@@ -13,15 +13,15 @@ The ZIP contains the same installable files. Extract it first and select the ext
 
 ## Use
 
-Choose a preset or change background, surface, text, and border colors. Settings save immediately. **This website** creates an override for the current hostname; **Default for all websites** changes the fallback for websites without overrides. **Use website defaults** deletes that site's override. Switching **On** off restores original page colors. The popup stays black regardless of the page palette.
+Choose a preset or change background, surface, text, and border colors. Settings save immediately. **This website** creates an override for the current hostname; **All College Board sites** changes the fallback for supported sites without overrides. **Use website defaults** deletes that site's override. Switching **On** off restores original page colors. The popup stays black regardless of the page palette.
 
 **Old book** uses warm beige backgrounds and dark brown text. It has no texture or animation. **White backing for quiz diagrams** keeps transparent Learnosity images readable without inverting their pixels. Custom color contrast is shown against both background colors.
 
 ## Scope and privacy
 
-The extension requests local storage, active-tab access for identifying the current site, and content-script access to HTTP/HTTPS pages. It stores settings locally. It has no analytics, network requests, remote libraries, or quiz-answer features. The supplied HAR files were inspected for CSS patterns; account data, request headers, captured questions, and HAR files are not included in the extension or ZIP.
+The extension requests local storage, active-tab access for identifying the current site, and content-script access limited to HTTPS College Board and Learnosity domains. It stores settings locally. It has no analytics, network requests, remote libraries, or quiz-answer features. The supplied HAR files were inspected for CSS patterns; account data, request headers, captured questions, and HAR files are not included in the extension or ZIP.
 
-The implementation follows [Chrome's content script model](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts). Page recoloring cannot change the Chrome toolbar, internal pages, Web Store, or built-in PDF viewer. Closed shadow roots and unusual inline `!important` rules can retain original styles. Images, videos, diagram SVGs, and canvases keep their original artwork; neutral SVG icons in controls follow the text color; full-color background images are preserved. Embedded HTTP/HTTPS frames inherit the top-level hostname when exposed by Chrome.
+The implementation follows [Chrome's content script model](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts). Page recoloring cannot change the Chrome toolbar, internal pages, Web Store, or built-in PDF viewer. Closed shadow roots and unusual inline `!important` rules can retain original styles. Images, videos, diagram SVGs, and canvases keep their original artwork; neutral SVG icons in controls follow the text color; full-color background images are preserved. Embedded Learnosity frames inherit the College Board top-level hostname when exposed by Chrome. Standalone Learnosity pages and other websites are not themed.
 
 ## Verification
 
@@ -37,7 +37,7 @@ Set `CHROMIUM_PATH` if using a separately installed Chromium executable. Preview
 
 ## Changes after release 1.0.0
 
-The main branch contains version 1.0.5. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
+The main branch contains version 1.0.6. Releases **1.0.2** and **1.0.3** are published on GitHub; release **1.0.0** remains available unchanged.
 
 - Re-scan the page when dynamically inserted stylesheets change quiz colors.
 - Override high-specificity page rules affecting headers, footers, banners, and controls.
@@ -68,3 +68,9 @@ Replaced the popup logo and all toolbar/extension icon sizes with the updated su
 ### 1.0.5 — CollegeBoard+ branding
 
 Renamed the extension, toolbar title, and popup to CollegeBoard+. Page colors remains the current feature. New release assets use `CollegeBoardPlus-vVERSION.zip`; previously published asset names remain unchanged.
+
+### 1.0.6 — College Board sites only
+
+Only `collegeboard.org` and its subdomains activate CollegeBoard+. Learnosity frames are supported when embedded within a College Board page; standalone Learnosity pages are left unchanged. Broad all-website content-script access has been removed. The popup identifies unsupported tabs and labels shared defaults as “All College Board sites.”
+
+After updating, reload existing tabs to remove any styling injected by earlier versions. Controlled Chromium checks cover unrelated and lookalike domains, standalone Learnosity, embedded Learnosity, and the existing theme/loading behavior. Live signed-in quiz verification remains pending.
